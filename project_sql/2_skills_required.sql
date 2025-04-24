@@ -36,7 +36,7 @@ SELECT tp.*,
     sd.skills
 FROM top_paying_jobs tp
 JOIN skills_job_dim sj ON tp.job_id = sj.job_id
-JOIN skills_dim sd ON sj.skill_id = sd.skill_id
+JOIN skills_dim sd ON sj.skill_id = sd.skill_id;
 
 
 /*
