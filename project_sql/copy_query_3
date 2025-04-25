@@ -1,0 +1,81 @@
+/*
+Question: What are the most in-demand skills for the data analyst role?
+- Find the total number of remote job postings per skill
+- Display the top 5 skills by their demand in remote jobs.
+- Include skill ID, name and total number of postings requiring the skill.
+*/
+
+
+SELECT 
+    job_id,
+    skill_id
+FROM 
+    skills_job_dim
+WHERE
+    job_id 
+IN (
+    SELECT job_id
+    --job_work_from_home as remote_jobs
+    FROM job_postings_fact
+    WHERE job_work_from_home = TRUE
+    );
+
+--Group the result set to find total number of remote job postings per skill.
+-- Rank to identify the top 5.
+
+SELECT 
+    skill_id, 
+    count(job_id) as total_job_postings,
+    rank() over(order by count(job_id) desc) as rank
+FROM 
+    (
+    SELECT
+        job_id,
+        skill_id
+    FROM skills_job_dim
+    WHERE job_id IN 
+        (
+        SELECT job_id
+        --job_work_from_home as remote_jobs
+        FROM job_postings_fact
+        WHERE job_work_from_home = TRUE
+        AND job_title_short = 'Data Analyst')
+        )
+GROUP BY skill_id;
+
+
+
+-- Include skill ID, name and total number of postings requiring the skill.
+-- Join the skills_dim table using CTE to fetch skill names.
+
+
+WITH remote_jobs_total AS
+    (
+    SELECT 
+        skill_id, 
+        count(job_id) AS total_job_postings
+        , RANK() OVER(ORDER BY count(job_id) DESC) AS rank
+    FROM 
+        (
+        SELECT
+            job_id,
+            skill_id
+        FROM skills_job_dim
+        WHERE job_id IN
+            (
+            SELECT job_id
+            --job_work_from_home as remote_jobs
+            FROM job_postings_fact
+            WHERE job_work_from_home = TRUE
+            AND job_title_short = 'Data Analyst'
+            )
+        )
+    GROUP BY skill_id
+    )
+
+SELECT rj.skill_id , sd.skills, total_job_postings
+FROM remote_jobs_total rj
+JOIN skills_dim sd ON rj.skill_id = sd.skill_id
+WHERE rank <= 5
+ORDER BY total_job_postings DESC;
+
